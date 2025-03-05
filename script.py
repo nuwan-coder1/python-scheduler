@@ -2,7 +2,7 @@ import googleapiclient.discovery
 import os
 
 # Load API key from environment variables
-API_KEY = os.getenv("YOUTUBE_API_KEY")  # Uses GitHub Secrets
+API_KEY = os.getenv("API_KEY")  # Uses GitHub Secrets
 CHANNEL_ID = "UCCK3OZi788Ok44K97WAhLKQ"
 PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf"
 PREVIOUS_VIDEO_ID_FILE = "previous_video_id.txt"
