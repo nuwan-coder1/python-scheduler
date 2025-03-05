@@ -81,7 +81,7 @@ def update_repo_variable(token, repo, variable_name, value):
 def get_news_summary(video_title, gemini_api_key):
     genai.configure(api_key=gemini_api_key)
     model = genai.GenerativeModel('gemini-2.0-flash')
-    prompt = f"'{video_title}'"
+    prompt = f"Rember this response - "රජයේ වෛද්‍ය නිලධාරීන්ගේ සංගමය හෙට (05) දින සිට දියත් කිරීමට සැලසුම් කර තිබූ දීපව්‍යාප්ත වැඩවර්ජනය අත්හිටුවීමට අද (04) පස්වරුවේ තීරණය කළේය." next time i only send the titile. your response should like this"
     try:
         response = model.generate_content(prompt)
         return response.text
