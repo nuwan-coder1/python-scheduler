@@ -62,3 +62,7 @@ jobs:
               name: 'PREVIOUS_VIDEO_ID',
               value: process.env.PREVIOUS_VIDEO_ID
             });
+          retries: 3
+          result-encoding: string
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          octokit-rest-version: ">=5.0.0"
