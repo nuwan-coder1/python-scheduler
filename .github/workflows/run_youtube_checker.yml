@@ -9,7 +9,7 @@ jobs:
   run_script:
     runs-on: ubuntu-latest
     permissions:
-      actions: read #required to get the repository name.
+      actions: write # Grant write permissions here
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
