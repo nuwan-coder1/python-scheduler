@@ -29,10 +29,43 @@ jobs:
       - name: Run Python Script
         id: run_python
         env:
-          API_KEY: <span class="math-inline">\{\{ secrets\.YOUTUBE\_API\_KEY \}\}
-run\: echo "video\_id\=</span>(python script.py)" >> $GITHUB_OUTPUT
+          API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: echo "video_id=$(python script.py)" >> $GITHUB_OUTPUT
 
   check_for_changes:
     runs-on: ubuntu-latest
     needs: run_script
-    if: ${{ needs.run_script.outputs.
+    if: ${{ needs.run_script.outputs.video_id != '' }}
+
+    steps:
+      - name: Check previous video id
+        run: |
+          PREVIOUS_VIDEO_ID="${{ vars.PREVIOUS_VIDEO_ID }}"
+          LATEST_VIDEO_ID="${{ needs.run_script.outputs.video_id }}"
+
+          if [[ "$LATEST_VIDEO_ID" != "$PREVIOUS_VIDEO_ID" ]]; then
+            echo "New video detected!"
+          else
+            echo "No new video detected."
+          fi
+
+      - name: Set new variable
+        run: |
+          echo "PREVIOUS_VIDEO_ID=${{ needs.run_script.outputs.video_id }}" >> $GITHUB_ENV
+
+      - name: Install @octokit/rest
+        run: |
+          npm install @octokit/rest
+
+      - name: Update Variable
+        run: |
+          npx -p @octokit/rest node <<EOF
+            import { Octokit } from "@octokit/rest";
+            const octokit = new Octokit({ auth: "${{ secrets.GITHUB_TOKEN }}" });
+            await octokit.rest.actions.updateRepoVariable({
+              owner: "${{ github.repository_owner }}",
+              repo: "${{ github.event.repository.name }}",
+              name: "PREVIOUS_VIDEO_ID",
+              value: process.env.PREVIOUS_VIDEO_ID
+            });
+          EOF
