@@ -30,6 +30,6 @@ jobs:
       - name: Run Python Script
         env:
           API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.CODE_TOKEN }}
+          GITHUB_REPOSITORY: ${{ secrets.CODE_REPOSITORY }}
         run: python script.py
