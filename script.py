@@ -1,6 +1,7 @@
 import googleapiclient.discovery
 import os
 import logging
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -8,6 +9,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 API_KEY = os.getenv("API_KEY")
 CHANNEL_ID = "UCCK3OZi788Ok44K97WAhLKQ"  # Replace with your channel ID
 PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf" # Replace with your playlist ID
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+REPOSITORY = os.getenv("GITHUB_REPOSITORY")
+VARIABLE_NAME = "PREVIOUS_VIDEO_ID"
 
 def get_latest_public_video_info(youtube, playlist_id):
     try:
@@ -45,6 +49,20 @@ def get_latest_published_public_video(youtube, video_ids):
         logging.error(f"Error retrieving latest video: {e}")
         return None
 
+def update_repo_variable(token, repo, variable_name, value):
+    url = f"https://api.github.com/repos/{repo}/actions/variables/{variable_name}"
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+    }
+    data = {"value": value}
+    response = requests.patch(url, headers=headers, json=data)
+    if response.status_code == 204:
+        logging.info(f"Variable '{variable_name}' updated successfully.")
+    else:
+        logging.error(f"Failed to update variable '{variable_name}': {response.status_code} - {response.text}")
+
 def main():
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
     latest_video_id, latest_video_title = get_latest_public_video_info(youtube, PLAYLIST_ID)
@@ -53,10 +71,13 @@ def main():
         logging.info("Could not retrieve latest public video information.")
         return
 
-    # Print the video ID to standard output
-    print(latest_video_id)
-
     logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
+
+    # Update the repository variable
+    if GITHUB_TOKEN and REPOSITORY:
+        update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
+    else:
+        logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
 
 if __name__ == "__main__":
     if not API_KEY:
