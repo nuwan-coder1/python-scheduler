@@ -14,9 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Clear npm cache
-        run: npm cache clean --force
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -25,12 +22,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install google-api-python-client requests
+          pip install google-api-python-client requests google-generativeai
 
       - name: Run Python Script
         env:
           API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.CODE_TOKEN }}
-          GITHUB_REPOSITORY: ${{ secrets.CODE_REPOSITORY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python script.py
