@@ -71,9 +71,12 @@ def main():
 
     # Always write the latest video ID, if it exists, to the file.
     if latest_video_id:
-        try:
+        logging.info(f"Writing video ID: {latest_video_id} to file.")
+            logging.info(f"Current working directory: {os.getcwd()}") # added log
+            logging.info(f"File path: {os.path.abspath(PREVIOUS_VIDEO_ID_FILE)}") # added log
             with open(PREVIOUS_VIDEO_ID_FILE, "w") as f:
                 f.write(latest_video_id)
+            logging.info("Video ID written successfully.") #added log
         except Exception as e:
             logging.error(f"Error writing to {PREVIOUS_VIDEO_ID_FILE}: {e}")
 
