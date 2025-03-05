@@ -81,7 +81,7 @@ def update_repo_variable(token, repo, variable_name, value):
 def get_news_summary(video_title, gemini_api_key):
     genai.configure(api_key=gemini_api_key)
     model = genai.GenerativeModel('gemini-2.0-flash')
-    prompt = f"Find news relevant to the video title: '{video_title}'. Provide short summary for fb post in sinhala. only sinhala news is enogh"
+    prompt = f"Please find detail new for this title: '{video_title}'. and give me summary in sinahala"
     try:
         response = model.generate_content(prompt)
         return response.text
