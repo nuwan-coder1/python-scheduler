@@ -1,9 +1,9 @@
-name: Run YouTube Checker Every 30 Minutes
+name: Check YouTube for New Videos
 
 on:
   schedule:
-    - cron: "*/5 * * * *"  # Runs every 30 minutes
-  workflow_dispatch:  # Allows manual trigger
+    - cron: "*/30 * * * *"  # Runs every 30 minutes
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   run_script:
