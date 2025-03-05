@@ -1,12 +1,11 @@
 import googleapiclient.discovery
-import time
 import os
 
 # Load API key from environment variables
 API_KEY = os.getenv("API_KEY")  # Uses GitHub Secrets
 CHANNEL_ID = "UCCK3OZi788Ok44K97WAhLKQ"
 PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf"
-CHECK_INTERVAL = 1800  # 30 minutes
+PREVIOUS_VIDEO_ID_FILE = "previous_video_id.txt"
 
 def get_latest_public_video_info(youtube, playlist_id):
     try:
@@ -48,10 +47,21 @@ def main():
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
     latest_video_id, latest_video_title = get_latest_public_video_info(youtube, PLAYLIST_ID)
 
-    if latest_video_id:
-        print(f"Latest public video: {latest_video_title} (ID: {latest_video_id})")
+    if not latest_video_id:
+        print("Could not retrieve latest public video information.")
+        return
+
+    previous_video_id = None
+    if os.path.exists(PREVIOUS_VIDEO_ID_FILE):
+        with open(PREVIOUS_VIDEO_ID_FILE, "r") as f:
+            previous_video_id = f.read().strip()
+
+    if latest_video_id != previous_video_id:
+        print(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
+        with open(PREVIOUS_VIDEO_ID_FILE, "w") as f:
+            f.write(latest_video_id)
     else:
-        print("No new videos found.")
+        print("No new public videos found.")
 
 if __name__ == "__main__":
     if not API_KEY:
