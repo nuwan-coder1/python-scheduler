@@ -2,6 +2,7 @@ import googleapiclient.discovery
 import os
 import logging
 import requests
+import google.generativeai as genai
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
