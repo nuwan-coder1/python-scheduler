@@ -49,6 +49,19 @@ def get_latest_published_public_video(youtube, video_ids):
         logging.error(f"Error retrieving latest video: {e}")
         return None
 
+def get_repo_variable(token, repo, variable_name):
+    url = f"https://api.github.com/repos/{repo}/actions/variables/{variable_name}"
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json().get("value")
+    else:
+        logging.error(f"Failed to get variable '{variable_name}': {response.status_code} - {response.text}")
+        return None
+
 def update_repo_variable(token, repo, variable_name, value):
     url = f"https://api.github.com/repos/{repo}/actions/variables/{variable_name}"
     headers = {
@@ -73,11 +86,19 @@ def main():
 
     logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
 
-    # Update the repository variable
-    if GITHUB_TOKEN and REPOSITORY:
-        update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
+    # Get the previous video ID
+    previous_video_id = get_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME)
+
+    # Check if the latest video ID is different
+    if latest_video_id != previous_video_id:
+        logging.info("New video detected. Updating repository variable.")
+        # Update the repository variable
+        if GITHUB_TOKEN and REPOSITORY:
+            update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
+        else:
+            logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
     else:
-        logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
+        logging.info("No new video detected. Skipping update.")
 
 if __name__ == "__main__":
     if not API_KEY:
