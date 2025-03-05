@@ -83,15 +83,13 @@ def main():
     if not latest_video_id:
         logging.info("Could not retrieve latest public video information.")
         return
-
-    logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
-
+        
     # Get the previous video ID
     previous_video_id = get_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME)
 
     # Check if the latest video ID is different
     if latest_video_id != previous_video_id:
-        logging.info("New video detected. Updating repository variable.")
+        logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
         # Update the repository variable
         if GITHUB_TOKEN and REPOSITORY:
             update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
