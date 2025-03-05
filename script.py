@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 API_KEY = os.getenv("API_KEY")
 CHANNEL_ID = "UCCK3OZi788Ok44K97WAhLKQ"  # Replace with your channel ID
-PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf" # Replace with your playlist ID
+PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf"  # Replace with your playlist ID
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 REPOSITORY = os.getenv("GITHUB_REPOSITORY")
 VARIABLE_NAME = "PREVIOUS_VIDEO_ID"
@@ -80,15 +80,15 @@ def update_repo_variable(token, repo, variable_name, value):
 
 def get_news_summary(video_title, gemini_api_key):
     genai.configure(api_key=gemini_api_key)
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    prompt = f"Find news relevant to the video title: '{video_title}'. Provide a brief summary in sinhala."
+    model = genai.GenerativeModel('gemini-pro')
+    prompt = f"Find news relevant to the video title: '{video_title}'. Provide a brief summary."
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
         logging.error(f"Error getting news summary: {e}")
         return None
-        
+
 def main():
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
     latest_video_id, latest_video_title = get_latest_public_video_info(youtube, PLAYLIST_ID)
@@ -105,7 +105,7 @@ def main():
         logging.info("New video detected. Updating repository variable.")
         if GITHUB_TOKEN and REPOSITORY:
             #update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
-             logging.info("need to comment uncomment above line")
+            return None
         else:
             logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
 
