@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 API_KEY = os.getenv("API_KEY")
 CHANNEL_ID = "UCCK3OZi788Ok44K97WAhLKQ"  # Replace with your channel ID
 PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf" # Replace with your playlist ID
-PREVIOUS_VIDEO_ID_FILE = "previous_video_id.txt"
+PREVIOUS_VIDEO_ID_FILE = "video_id.txt"
 
 def get_latest_public_video_info(youtube, playlist_id):
     try:
