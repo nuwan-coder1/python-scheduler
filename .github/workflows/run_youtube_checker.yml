@@ -59,7 +59,7 @@ jobs:
 
       - name: Update Variable
         run: |
-          npx -p @octokit/rest node <<EOF
+          npx -p @octokit/rest node --input-type=module <<EOF
             import { Octokit } from "@octokit/rest";
             const octokit = new Octokit({ auth: "${{ secrets.GITHUB_TOKEN }}" });
             await octokit.rest.actions.updateRepoVariable({
