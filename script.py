@@ -104,7 +104,7 @@ def main():
         logging.info("New video detected. Updating repository variable.")
         if GITHUB_TOKEN and REPOSITORY:
             #update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
-            return None
+             logging.info("need to comment uncomment above line")
         else:
             logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
 
