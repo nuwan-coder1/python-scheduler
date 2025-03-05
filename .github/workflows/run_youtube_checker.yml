@@ -9,10 +9,13 @@ jobs:
   run_script:
     runs-on: ubuntu-latest
     permissions:
-      actions: write # Grant write permissions here
+      actions: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Clear npm cache
+        run: npm cache clean --force
 
       - name: Set up Python
         uses: actions/setup-python@v4
