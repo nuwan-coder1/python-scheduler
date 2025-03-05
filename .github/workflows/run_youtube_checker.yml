@@ -62,7 +62,7 @@ jobs:
         with:
           script: |
             await (async () => {
-              const { Octokit } = require("@octokit/rest");
+              const { Octokit } = await import("@octokit/rest");
               const octokit = new Octokit({ auth: "${{ secrets.GITHUB_TOKEN }}" });
 
               await octokit.rest.actions.updateRepoVariable({
@@ -73,4 +73,3 @@ jobs:
               });
             })();
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          node-version: '16' # or higher
