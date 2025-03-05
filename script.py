@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 API_KEY = os.getenv("API_KEY")
 CHANNEL_ID = "UCCK3OZi788Ok44K97WAhLKQ"  # Replace with your channel ID
 PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf" # Replace with your playlist ID
-PREVIOUS_VIDEO_ID_FILE = "video_id.txt"
 
 def get_latest_public_video_info(youtube, playlist_id):
     try:
@@ -54,32 +53,10 @@ def main():
         logging.info("Could not retrieve latest public video information.")
         return
 
-    previous_video_id = None
-    if os.path.exists(PREVIOUS_VIDEO_ID_FILE):
-        try:
-            with open(PREVIOUS_VIDEO_ID_FILE, "r") as f:
-                previous_video_id = f.read().strip()
-        except FileNotFoundError:
-            logging.warning(f"File {PREVIOUS_VIDEO_ID_FILE} not found.")
-        except Exception as e:
-            logging.error(f"Error reading {PREVIOUS_VIDEO_ID_FILE}: {e}")
+    # Print the video ID to standard output
+    print(latest_video_id)
 
-    if latest_video_id != previous_video_id:
-        logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
-    else:
-        logging.info("No new public videos found.")
-
-    # Always write the latest video ID, if it exists, to the file.
-    if latest_video_id:
-        try:
-            logging.info(f"Writing video ID: {latest_video_id} to file.")
-            logging.info(f"Current working directory: {os.getcwd()}") # Corrected indentation
-            logging.info(f"File path: {os.path.abspath(PREVIOUS_VIDEO_ID_FILE)}") # Corrected indentation
-            with open(PREVIOUS_VIDEO_ID_FILE, "w") as f:
-                f.write(latest_video_id)
-            logging.info("Video ID written successfully.")
-        except Exception as e:
-            logging.error(f"Error writing to {PREVIOUS_VIDEO_ID_FILE}: {e}")
+    logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
 
 if __name__ == "__main__":
     if not API_KEY:
