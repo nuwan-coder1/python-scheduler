@@ -12,6 +12,7 @@ PLAYLIST_ID = "PLkkCdeu97j3DVg0ZhXg7LY6vFuHqohGEf" # Replace with your playlist 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 REPOSITORY = os.getenv("GITHUB_REPOSITORY")
 VARIABLE_NAME = "PREVIOUS_VIDEO_ID"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 def get_latest_public_video_info(youtube, playlist_id):
     try:
@@ -76,6 +77,17 @@ def update_repo_variable(token, repo, variable_name, value):
     else:
         logging.error(f"Failed to update variable '{variable_name}': {response.status_code} - {response.text}")
 
+def get_news_summary(video_title, gemini_api_key):
+    genai.configure(api_key=gemini_api_key)
+    model = genai.GenerativeModel('gemini-2.0-flash')
+    prompt = f"Find news relevant to the video title: '{video_title}'. Provide a brief summary in sinhala."
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        logging.error(f"Error getting news summary: {e}")
+        return None
+        
 def main():
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
     latest_video_id, latest_video_title = get_latest_public_video_info(youtube, PLAYLIST_ID)
@@ -83,18 +95,27 @@ def main():
     if not latest_video_id:
         logging.info("Could not retrieve latest public video information.")
         return
-        
-    # Get the previous video ID
+
+    logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
+
     previous_video_id = get_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME)
 
-    # Check if the latest video ID is different
     if latest_video_id != previous_video_id:
-        logging.info(f"New public video detected: {latest_video_title} (ID: {latest_video_id})")
-        # Update the repository variable
+        logging.info("New video detected. Updating repository variable.")
         if GITHUB_TOKEN and REPOSITORY:
             update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
         else:
             logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
+
+        # Get news summary using Gemini
+        if GEMINI_API_KEY:
+            news_summary = get_news_summary(latest_video_title, GEMINI_API_KEY)
+            if news_summary:
+                logging.info(f"News Summary:\n{news_summary}")
+            else:
+                logging.error("Failed to get news summary.")
+        else:
+            logging.warning("GEMINI_API_KEY not set. Skipping news summary.")
     else:
         logging.info("No new video detected. Skipping update.")
 
