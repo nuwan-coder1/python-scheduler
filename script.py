@@ -156,7 +156,7 @@ def main():
 
                     if summary and title:
                         logging.info(f"News Summary:\n{summary}")
-                        facebook_message = f"{title}\n\n{summary}\n\nWatch here: https://www.youtube.com/watch?v={latest_video_id}"
+                        facebook_message = f"{title}\n\n\n{summary}\n\n"
 
                         if FACEBOOK_ACCESS_TOKEN and FACEBOOK_PAGE_ID:
                             publish_to_facebook(FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, facebook_message)
