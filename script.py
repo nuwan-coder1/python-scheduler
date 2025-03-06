@@ -140,8 +140,7 @@ def main():
     if latest_video_id != previous_video_id:
         logging.info("New video detected. Updating repository variable.")
         if GITHUB_TOKEN and REPOSITORY:
-            #update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
-            logging.info("remove this log")
+            update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
         else:
             logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
 
@@ -156,7 +155,7 @@ def main():
 
                     if summary and title:
                         logging.info(f"News Summary:\n{summary}")
-                        facebook_message = f"{title}\n\n\n{summary}\n\n"
+                        facebook_message = f"{summary}\n\n"
 
                         if FACEBOOK_ACCESS_TOKEN and FACEBOOK_PAGE_ID:
                             publish_to_facebook(FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, facebook_message)
