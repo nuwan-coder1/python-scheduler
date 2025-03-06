@@ -2,8 +2,8 @@ name: Check YouTube for New Videos
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
-  workflow_dispatch:
+    - cron: "*/30 * * * *"  # Runs every 30 minutes
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   run_script:
@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install google-api-python-client requests google-generativeai
+          pip install google-api-python-client requests google-generativeai facebook-business
 
       - name: Run Python Script
         env:
@@ -30,4 +30,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CODE_TOKEN }}
           GITHUB_REPOSITORY: ${{ secrets.CODE_REPOSITORY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
         run: python script.py
