@@ -88,8 +88,7 @@ def get_news_summary(video_title, gemini_api_key):
     """Uses Gemini AI to generate a news summary in Sinhala."""
     genai.configure(api_key=gemini_api_key)
     model = genai.GenerativeModel('gemini-2.0-flash')
-    prompt = f"Using this news title: '{video_title}'. Provide a detailed news summary and attractive title in Sinhala as JSON format."
-    
+    prompt = f"Using this news title: '{video_title}'. Provide a detailed news summary and attractive title in sinhala as json format, only include title and summary field"
     try:
         response = model.generate_content(prompt)
         return response.text
