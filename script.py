@@ -131,7 +131,8 @@ def main():
     if latest_video_id != previous_video_id:
         logging.info("New video detected. Updating repository variable.")
         if GITHUB_TOKEN and REPOSITORY:
-            update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
+            #update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
+            logging.info("remove this log")
         else:
             logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
 
