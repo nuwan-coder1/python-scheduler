@@ -185,3 +185,5 @@ def main():
                             logging.warning("FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID not set. Skipping Facebook post.")
                     else:
                         logging.error("Summary or title missing from Gemini response.")
+                except json.JSONDecodeError as e:
+                    logging.error(f"Failed to decode JSON from Gemini response: {e}, response: {news_summary_json}")
