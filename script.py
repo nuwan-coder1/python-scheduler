@@ -4,6 +4,8 @@ import logging
 import requests
 import google.generativeai as genai
 import json
+from pytube import YouTube
+import tempfile
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -84,30 +86,46 @@ def update_repo_variable(token, repo, variable_name, value):
     else:
         logging.error(f"Failed to update variable '{variable_name}': {response.status_code} - {response.text}")
 
-def get_news_summary(video_title, gemini_api_key):
-    """Uses Gemini AI to generate a news summary in Sinhala."""
-    genai.configure(api_key=gemini_api_key)
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    prompt = f"Using this news title: '{video_title}'. Provide a detailed news summary and attractive title in sinhala as json format, only include title and summary field"
+def get_news_summary_from_audio(video_id, gemini_api_key):
+    """Uses Gemini AI to generate a news summary from audio in Sinhala."""
     try:
-        response = model.generate_content(prompt)
-        text = response.text
-        # Remove markdown code block and line numbers
-        if "```json" in text:
-            start = text.find("{")
-            end = text.rfind("}") + 1
-            json_str = text[start:end]
-        else:
-            json_str = text # if gemini returns a clean json string
+        yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
+        audio_stream = yt.streams.filter(only_audio=True).first()
 
-        return json_str
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=True) as temp_audio:
+            audio_stream.download(filename=temp_audio.name)
+
+            genai.configure(api_key=gemini_api_key)
+            model = genai.GenerativeModel('gemini-1.5-pro-0409')
+
+            with open(temp_audio.name, "rb") as audio_file:
+                contents = [
+                    {
+                        "mime_type": "audio/mp4",
+                        "data": audio_file.read()
+                    }
+                ]
+                prompt = "Provide a detailed news summary and attractive title in sinhala as json format, only include title and summary field"
+
+                response = model.generate_content(contents, stream=False, generation_config=genai.types.GenerationConfig(max_output_tokens=4096))
+                text = response.text
+
+                if "```json" in text:
+                    start = text.find("{")
+                    end = text.rfind("}") + 1
+                    json_str = text[start:end]
+                else:
+                    json_str = text
+
+                return json_str
+
     except Exception as e:
-        logging.error(f"Error getting news summary: {e}")
+        logging.error(f"Error getting news summary from audio: {e}")
         return None
 
 def publish_to_facebook(access_token, page_id, message):
     """Publishes a post on a Facebook Page using the Graph API."""
-    url = f"https://graph.facebook.com/v19.0/{page_id}/feed"
+    url = f"[https://graph.facebook.com/v19.0/](https://graph.facebook.com/v19.0/){page_id}/feed"
     payload = {
         "message": message,
         "access_token": access_token
@@ -144,9 +162,9 @@ def main():
         else:
             logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
 
-        # Get news summary using Gemini AI
+        # Get news summary using Gemini AI from audio
         if GEMINI_API_KEY:
-            news_summary_json = get_news_summary(latest_video_title, GEMINI_API_KEY)
+            news_summary_json = get_news_summary_from_audio(latest_video_id, GEMINI_API_KEY)
             if news_summary_json:
                 try:
                     news_data = json.loads(news_summary_json)
@@ -163,17 +181,3 @@ def main():
                             logging.warning("FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID not set. Skipping Facebook post.")
                     else:
                         logging.error("Summary or title missing from Gemini response.")
-                except json.JSONDecodeError as e:
-                    logging.error(f"Failed to decode JSON from Gemini response: {e}, response: {news_summary_json}")
-            else:
-                logging.error("Failed to get news summary.")
-        else:
-            logging.warning("GEMINI_API_KEY not set. Skipping news summary.")
-    else:
-        logging.info("No new video detected. Skipping update.")
-
-if __name__ == "__main__":
-    if not API_KEY:
-        logging.error("API_KEY is missing. Set it in GitHub Secrets.")
-    else:
-        main()
