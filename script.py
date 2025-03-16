@@ -92,6 +92,10 @@ def get_news_summary_from_audio(video_id, gemini_api_key):
         yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
         audio_stream = yt.streams.filter(only_audio=True).first()
 
+        if audio_stream is None:
+            logging.error("No audio stream found for the video.")
+            return None
+
         with tempfile.NamedTemporaryFile(suffix=".mp4", delete=True) as temp_audio:
             audio_stream.download(filename=temp_audio.name)
 
