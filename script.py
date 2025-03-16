@@ -100,7 +100,7 @@ def get_news_summary_from_audio(video_id, gemini_api_key):
             audio_stream.download(filename=temp_audio.name)
 
             genai.configure(api_key=gemini_api_key)
-            model = genai.GenerativeModel('gemini-1.5-pro-0409')
+            model = genai.GenerativeModel('gemini-2.0-flash')
 
             with open(temp_audio.name, "rb") as audio_file:
                 contents = [
