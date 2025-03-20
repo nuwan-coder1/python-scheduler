@@ -4,9 +4,6 @@ import logging
 import requests
 import google.generativeai as genai
 import json
-import subprocess
-import whisper
-import tempfile
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -87,35 +84,11 @@ def update_repo_variable(token, repo, variable_name, value):
     else:
         logging.error(f"Failed to update variable '{variable_name}': {response.status_code} - {response.text}")
 
-def get_audio_transcript(video_id):
-    """Downloads audio from YouTube using yt-dlp and transcribes it."""
-    try:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            audio_file_path = os.path.join(temp_dir, "audio.wav")
-            command = [
-                "yt-dlp",
-                "-x",  # Extract audio
-                "--audio-format", "wav",
-                "-o", audio_file_path,
-                f"https://www.youtube.com/watch?v={video_id}",
-            ]
-            subprocess.run(command, check=True)
-
-            model = whisper.load_model("base")
-            result = model.transcribe(audio_file_path)
-            return result["text"]
-    except subprocess.CalledProcessError as e:
-        logging.error(f"yt-dlp error: {e}")
-        return None
-    except Exception as e:
-        logging.error(f"Error getting audio transcript: {e}")
-        return None
-
-def get_news_summary(transcript, gemini_api_key):
-    """Uses Gemini AI to generate a news summary in Sinhala from transcript."""
+def get_news_summary(video_title, gemini_api_key):
+    """Uses Gemini AI to generate a news summary in Sinhala."""
     genai.configure(api_key=gemini_api_key)
     model = genai.GenerativeModel('gemini-2.0-flash')
-    prompt = f"Summarize this news audio transcript in sinhala and provide an attractive title in sinhala as json format, only include title and summary field: '{transcript}'"
+    prompt = f"Using this news title: '{video_title}'. Provide a detailed news summary and attractive title in sinhala as json format, only include title and summary field"
     try:
         response = model.generate_content(prompt)
         text = response.text
@@ -134,7 +107,7 @@ def get_news_summary(transcript, gemini_api_key):
 
 def publish_to_facebook(access_token, page_id, message):
     """Publishes a post on a Facebook Page using the Graph API."""
-    url = f"[https://graph.facebook.com/v19.0/](https://graph.facebook.com/v19.0/){page_id}/feed"
+    url = f"https://graph.facebook.com/v19.0/{page_id}/feed"
     payload = {
         "message": message,
         "access_token": access_token
@@ -171,37 +144,31 @@ def main():
         else:
             logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
 
-        # Get audio transcript
-        transcript = get_audio_transcript(latest_video_id)
-        if transcript:
-            logging.info("Audio transcript obtained.")
-            # Get news summary using Gemini AI
-            if GEMINI_API_KEY:
-                news_summary_json = get_news_summary(transcript, GEMINI_API_KEY)
-                if news_summary_json:
-                    try:
-                        news_data = json.loads(news_summary_json)
-                        summary = news_data.get("summary")
-                        title = news_data.get("title")
+        # Get news summary using Gemini AI
+        if GEMINI_API_KEY:
+            news_summary_json = get_news_summary(latest_video_title, GEMINI_API_KEY)
+            if news_summary_json:
+                try:
+                    news_data = json.loads(news_summary_json)
+                    summary = news_data.get("summary")
+                    title = news_data.get("title")
 
-                        if summary and title:
-                            logging.info(f"News Summary:\n{summary}")
-                            facebook_message = f"{title}\n\n{summary}\n\n"
+                    if summary and title:
+                        logging.info(f"News Summary:\n{summary}")
+                        facebook_message = f"{summary}\n\n"
 
-                            if FACEBOOK_ACCESS_TOKEN and FACEBOOK_PAGE_ID:
-                                publish_to_facebook(FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, facebook_message)
-                            else:
-                                logging.warning("FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID not set. Skipping Facebook post.")
+                        if FACEBOOK_ACCESS_TOKEN and FACEBOOK_PAGE_ID:
+                            publish_to_facebook(FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, facebook_message)
                         else:
-                            logging.error("Summary or title missing from Gemini response.")
-                    except json.JSONDecodeError as e:
-                        logging.error(f"Failed to decode JSON from Gemini response: {e}, response: {news_summary_json}")
-                else:
-                    logging.error("Failed to get news summary.")
+                            logging.warning("FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID not set. Skipping Facebook post.")
+                    else:
+                        logging.error("Summary or title missing from Gemini response.")
+                except json.JSONDecodeError as e:
+                    logging.error(f"Failed to decode JSON from Gemini response: {e}, response: {news_summary_json}")
             else:
-                logging.warning("GEMINI_API_KEY not set. Skipping news summary.")
+                logging.error("Failed to get news summary.")
         else:
-            logging.error("Failed to retrieve audio transcript.")
+            logging.warning("GEMINI_API_KEY not set. Skipping news summary.")
     else:
         logging.info("No new video detected. Skipping update.")
 
