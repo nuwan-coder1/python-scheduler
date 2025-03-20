@@ -1,4 +1,3 @@
-```python
 import googleapiclient.discovery
 import os
 import logging
@@ -178,7 +177,27 @@ def main():
 
                         if summary and title:
                             logging.info(f"News Summary:\n{summary}")
-                            facebook_message = f"{summary}\n\n"
+                            facebook_message = f"{title}\n\n{summary}\n\n"
 
                             if FACEBOOK_ACCESS_TOKEN and FACEBOOK_PAGE_ID:
-                                publish_to_facebook(FACEBOOK_ACCESS
+                                publish_to_facebook(FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, facebook_message)
+                            else:
+                                logging.warning("FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID not set. Skipping Facebook post.")
+                        else:
+                            logging.error("Summary or title missing from Gemini response.")
+                    except json.JSONDecodeError as e:
+                        logging.error(f"Failed to decode JSON from Gemini response: {e}, response: {news_summary_json}")
+                else:
+                    logging.error("Failed to get news summary.")
+            else:
+                logging.warning("GEMINI_API_KEY not set. Skipping news summary.")
+        else:
+            logging.error("Failed to retrieve audio transcript.")
+    else:
+        logging.info("No new video detected. Skipping update.")
+
+if __name__ == "__main__":
+    if not API_KEY:
+        logging.error("API_KEY is missing. Set it in GitHub Secrets.")
+    else:
+        main()
