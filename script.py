@@ -90,7 +90,7 @@ def update_repo_variable(token, repo, variable_name, value):
 def get_audio_transcript(video_id):
     """Downloads audio from YouTube and transcribes it using Whisper."""
     try:
-        yt = pytube.YouTube(f"https://www.youtube.com/watch?v={video_id}")
+        yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
         audio_stream = yt.streams.filter(only_audio=True).first()
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -98,6 +98,15 @@ def get_audio_transcript(video_id):
             model = whisper.load_model("base")  # You can use "large" for better accuracy
             result = model.transcribe(audio_file_path)
             return result["text"]
+    except pytube.exceptions.RegexMatchError as e:
+        logging.error(f"Pytube RegexMatchError: {e}")
+        return None
+    except pytube.exceptions.VideoUnavailable as e:
+        logging.error(f"Pytube VideoUnavailable: {e}")
+        return None
+    except pytube.exceptions.AgeRestrictedError as e:
+        logging.error(f"Pytube AgeRestrictedError: {e}")
+        return None
     except Exception as e:
         logging.error(f"Error getting audio transcript: {e}")
         return None
