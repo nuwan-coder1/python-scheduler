@@ -4,7 +4,7 @@ import logging
 import requests
 import google.generativeai as genai
 import json
-import pytube
+from pytube import YouTube
 import whisper
 import tempfile
 
