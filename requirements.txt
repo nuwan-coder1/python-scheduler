@@ -2,5 +2,5 @@ google-api-python-client
 google-generativeai
 requests
 google-generativeai
-pytube
+subprocess
 openai-whisper
