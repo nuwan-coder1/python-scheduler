@@ -4,7 +4,7 @@ import logging
 import requests
 import google.generativeai as genai
 import json
-from pytube import YouTube
+import subprocess
 import whisper
 import tempfile
 
@@ -88,24 +88,24 @@ def update_repo_variable(token, repo, variable_name, value):
         logging.error(f"Failed to update variable '{variable_name}': {response.status_code} - {response.text}")
 
 def get_audio_transcript(video_id):
-    """Downloads audio from YouTube and transcribes it using Whisper."""
+    """Downloads audio from YouTube using yt-dlp and transcribes it."""
     try:
-        yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
-        audio_stream = yt.streams.filter(only_audio=True).first()
-
         with tempfile.TemporaryDirectory() as temp_dir:
-            audio_file_path = audio_stream.download(output_path=temp_dir)
-            model = whisper.load_model("base")  # You can use "large" for better accuracy
+            audio_file_path = os.path.join(temp_dir, "audio.wav")
+            command = [
+                "yt-dlp",
+                "-x",  # Extract audio
+                "--audio-format", "wav",
+                "-o", audio_file_path,
+                f"https://www.youtube.com/watch?v={video_id}",
+            ]
+            subprocess.run(command, check=True)
+
+            model = whisper.load_model("base")
             result = model.transcribe(audio_file_path)
             return result["text"]
-    except pytube.exceptions.RegexMatchError as e:
-        logging.error(f"Pytube RegexMatchError: {e}")
-        return None
-    except pytube.exceptions.VideoUnavailable as e:
-        logging.error(f"Pytube VideoUnavailable: {e}")
-        return None
-    except pytube.exceptions.AgeRestrictedError as e:
-        logging.error(f"Pytube AgeRestrictedError: {e}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"yt-dlp error: {e}")
         return None
     except Exception as e:
         logging.error(f"Error getting audio transcript: {e}")
