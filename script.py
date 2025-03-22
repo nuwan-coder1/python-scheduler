@@ -92,14 +92,17 @@ def download_audio(video_id):
     """Downloads the audio from a YouTube video."""
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': f'{video_id}.%(ext)s',
-        'quiet': True,
+        'format': '251',
+        'extractaudio': True,
+        'audioformat': 'mp3',
+        'outtmpl': f'{video_id}.%(ext)s'
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(youtube_url, download=False)
+            filename = ydl.prepare_filename(info_dict)
             ydl.download([video_url])
-        return f"{video_id}.mp3"
+        return filename
     except Exception as e:
         logging.error(f"Error downloading audio: {e}")
         return None
