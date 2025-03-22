@@ -95,7 +95,8 @@ def download_audio(video_id):
         'format': '251',
         'extractaudio': True,
         'audioformat': 'mp3',
-        'outtmpl': f'{video_id}.%(ext)s'
+        'outtmpl': f'{video_id}.%(ext)s',
+        'cookiesfrombrowser': ['chrome', 'firefox', 'edge', 'safari']
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
