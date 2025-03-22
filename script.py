@@ -4,6 +4,8 @@ import logging
 import requests
 import google.generativeai as genai
 import json
+import yt_dlp
+from pydub import AudioSegment
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -18,6 +20,8 @@ VARIABLE_NAME = "PREVIOUS_VIDEO_ID"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID")
 FACEBOOK_ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
+GEMINI_MODEL = 'gemini-pro'  # Or gemini-2.0-flash
+AUDIO_SAMPLE_RATE = 16000 #Hz
 
 def get_latest_public_video_info(youtube, playlist_id):
     """Fetches the latest public video from a YouTube playlist."""
@@ -84,30 +88,64 @@ def update_repo_variable(token, repo, variable_name, value):
     else:
         logging.error(f"Failed to update variable '{variable_name}': {response.status_code} - {response.text}")
 
-def get_news_summary(video_title, gemini_api_key):
-    """Uses Gemini AI to generate a news summary in Sinhala."""
-    genai.configure(api_key=gemini_api_key)
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    prompt = f"Using this news title: '{video_title}'. Provide a detailed news summary and attractive title in sinhala as json format, only include title and summary field"
+def download_audio(video_id):
+    """Downloads the audio from a YouTube video."""
+    video_url = f"https://www.youtube.com/watch?v={video_id}"
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': f'{video_id}.%(ext)s',
+        'quiet': True,
+    }
     try:
-        response = model.generate_content(prompt)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([video_url])
+        return f"{video_id}.mp3"
+    except Exception as e:
+        logging.error(f"Error downloading audio: {e}")
+        return None
+
+def downsample_audio(input_file, output_file, target_rate=AUDIO_SAMPLE_RATE):
+    """Downsamples an audio file."""
+    try:
+        audio = AudioSegment.from_file(input_file)
+        downsampled_audio = audio.set_frame_rate(target_rate)
+        downsampled_audio.export(output_file, format="mp3")
+        return True
+    except Exception as e:
+        logging.error(f"Error downsampling audio: {e}")
+        return False
+
+def get_news_summary(audio_file_path, gemini_api_key):
+    """Uses Gemini AI to generate a news summary in Sinhala from audio."""
+    genai.configure(api_key=gemini_api_key)
+    model = genai.GenerativeModel(GEMINI_MODEL)
+    try:
+        with open(audio_file_path, "rb") as audio_file:
+            audio_data = audio_file.read()
+        prompt = "Summarize the content of this audio in Sinhala as json format, only include title and summary field"
+        response = model.generate_content([
+            prompt,
+            {
+                "mime_type": "audio/mpeg",
+                "data": audio_data
+            }
+        ])
         text = response.text
-        # Remove markdown code block and line numbers
         if "```json" in text:
             start = text.find("{")
             end = text.rfind("}") + 1
             json_str = text[start:end]
         else:
-            json_str = text # if gemini returns a clean json string
-
+            json_str = text #if gemini returns clean json
         return json_str
+
     except Exception as e:
         logging.error(f"Error getting news summary: {e}")
         return None
 
 def publish_to_facebook(access_token, page_id, message):
     """Publishes a post on a Facebook Page using the Graph API."""
-    url = f"https://graph.facebook.com/v19.0/{page_id}/feed"
+    url = f"[https://graph.facebook.com/v19.0/](https://graph.facebook.com/v19.0/){page_id}/feed"
     payload = {
         "message": message,
         "access_token": access_token
@@ -138,42 +176,46 @@ def main():
     previous_video_id = get_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME)
 
     if latest_video_id != previous_video_id:
-        logging.info("New video detected. Updating repository variable.")
-        if GITHUB_TOKEN and REPOSITORY:
-            update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
-        else:
-            logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY environment variables not set.")
+        logging.info("New video detected. Processing...")
+        update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
 
-        # Get news summary using Gemini AI
-        if GEMINI_API_KEY:
-            news_summary_json = get_news_summary(latest_video_title, GEMINI_API_KEY)
-            if news_summary_json:
-                try:
-                    news_data = json.loads(news_summary_json)
-                    summary = news_data.get("summary")
-                    title = news_data.get("title")
-
-                    if summary and title:
-                        logging.info(f"News Summary:\n{summary}")
-                        facebook_message = f"{summary}\n\n"
-
-                        if FACEBOOK_ACCESS_TOKEN and FACEBOOK_PAGE_ID:
+        audio_file = download_audio(latest_video_id)
+        if audio_file:
+            downsampled_file = f"downsampled_{latest_video_id}.mp3"
+            if downsample_audio(audio_file, downsampled_file):
+                news_summary_json = get_news_summary(downsampled_file, GEMINI_API_KEY)
+                if news_summary_json:
+                    try:
+                        news_data = json.loads(news_summary_json)
+                        summary = news_data.get("summary")
+                        title = news_data.get("title")
+                        if summary and title:
+                            facebook_message = f"{title}\n\n{summary}"
                             publish_to_facebook(FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, facebook_message)
                         else:
-                            logging.warning("FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID not set. Skipping Facebook post.")
-                    else:
-                        logging.error("Summary or title missing from Gemini response.")
-                except json.JSONDecodeError as e:
-                    logging.error(f"Failed to decode JSON from Gemini response: {e}, response: {news_summary_json}")
+                            logging.error("Summary or title missing from Gemini response.")
+                    except json.JSONDecodeError as e:
+                        logging.error(f"Failed to decode JSON from Gemini response: {e}, response: {news_summary_json}")
+                else:
+                    logging.error("Failed to get news summary.")
+                os.remove(downsampled_file)  # Clean up downsampled file
             else:
-                logging.error("Failed to get news summary.")
+                logging.error("Downsampling audio failed.")
+            os.remove(audio_file) # Clean up original audio file
         else:
-            logging.warning("GEMINI_API_KEY not set. Skipping news summary.")
+            logging.error("Audio download failed.")
     else:
         logging.info("No new video detected. Skipping update.")
 
 if __name__ == "__main__":
     if not API_KEY:
         logging.error("API_KEY is missing. Set it in GitHub Secrets.")
+    elif not GITHUB_TOKEN or not REPOSITORY:
+        logging.error("GITHUB_TOKEN or GITHUB_REPOSITORY is missing.  Set them in GitHub Secrets.")
+    elif not GEMINI_API_KEY:
+        logging.error("GEMINI_API_KEY is missing. Set it in GitHub Secrets.")
+    elif not FACEBOOK_ACCESS_TOKEN or not FACEBOOK_PAGE_ID:
+        logging.warning("FACEBOOK_ACCESS_TOKEN or FACEBOOK_PAGE_ID is missing.  Facebook posting will be skipped.")
+        main() # still execute the main function.
     else:
         main()
