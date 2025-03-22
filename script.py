@@ -99,7 +99,7 @@ def download_audio(video_id):
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(youtube_url, download=False)
+            info_dict = ydl.extract_info(video_url, download=False)
             filename = ydl.prepare_filename(info_dict)
             ydl.download([video_url])
         return filename
