@@ -22,8 +22,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install yt-dlp google-api-python-client requests google-generativeai facebook-business openai-whisper
-
+          pip install yt-dlp google-api-python-client requests google-generativeai facebook-business yt-dlp pydub
+          
       - name: Run Python Script
         env:
           API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
