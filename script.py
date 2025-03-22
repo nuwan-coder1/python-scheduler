@@ -181,8 +181,7 @@ def main():
 
     if latest_video_id != previous_video_id:
         logging.info("New video detected. Processing...")
-        update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
-
+        
         audio_file = download_audio(latest_video_id)
         if audio_file:
             downsampled_file = f"downsampled_{latest_video_id}.mp3"
@@ -196,6 +195,7 @@ def main():
                         if summary and title:
                             facebook_message = f"{title}\n\n{summary}"
                             publish_to_facebook(FACEBOOK_ACCESS_TOKEN, FACEBOOK_PAGE_ID, facebook_message)
+                            update_repo_variable(GITHUB_TOKEN, REPOSITORY, VARIABLE_NAME, latest_video_id)
                         else:
                             logging.error("Summary or title missing from Gemini response.")
                     except json.JSONDecodeError as e:
