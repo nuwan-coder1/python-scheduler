@@ -3,4 +3,5 @@ google-generativeai
 requests
 google-generativeai
 subprocess
-openai-whisper
+yt-dlp 
+pydub
